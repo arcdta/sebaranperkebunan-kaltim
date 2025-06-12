@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebGIS ATRIBUT KALTIM</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map { height: 100vh; width: 100%; }
+    .popup-content img {
+      max-width: 200px;
+      height: auto;
+      display: block;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+  <script>
+    var map = L.map('map').setView([-1.5, 116.5], 7);
+
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles © Esri'
+    }).addTo(map);
+
+    var sawitIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/4274/4274066.png', // ikon pohon sawit
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
+    });
+
+    fetch('FIX.geojson')
+      .then(response => response.json())
+      .then(data => {
+        L.geoJSON(data, {
+          pointToLayer: function (feature, latlng) {
+            if (feature.properties.komoditas && feature.properties.komoditas.toLowerCase().includes("sawit")) {
+              return L.marker(latlng, { icon: sawitIcon });
+            } else {
+              return L.marker(latlng);
+            }
+          },
+          onEachFeature: function (feature, layer) {
+            var props = feature.properties;
+            var popupContent = '<div class="popup-content">';
+            for (var key in props) {
+              if (props.hasOwnProperty(key)) {
+                if (typeof props[key] === 'string' && props[key].match(/\.(jpeg|jpg|png|gif)$/i)) {
+                  popupContent += `<strong>${key}</strong><br><img src="${props[key]}" alt="image"><br>`;
+                } else {
+                  popupContent += `<strong>${key}:</strong> ${props[key]}<br>`;
+                }
+              }
+            }
+            popupContent += '</div>';
+            layer.bindPopup(popupContent);
+          },
+          style: {
+            color: "#FF5733",
+            weight: 2
+          }
+        }).addTo(map);
+      });
+  </script>
+</body>
+</html>
